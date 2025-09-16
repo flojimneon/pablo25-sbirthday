@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Tu foto con marco</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+    canvas {
+      margin-top: 20px;
+      max-width: 100%;
+      border: 2px solid #ccc;
+      border-radius: 12px;
+    }
+    button, input[type="file"] {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+    }
+    button:hover {
+      background: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sube tu foto y colócala en el marco</h1>
+  
+  <input type="file" id="upload" accept="image/*">
+  <br>
+  <canvas id="canvas"></canvas>
+  <br>
+  <button id="download" style="display:none;">Descargar imagen</button>
+
+  <script>
+    const upload = document.getElementById("upload");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const downloadBtn = document.getElementById("download");
+
+    // Load the frame image
+    const marco = new Image();
+    // Ensure you are using a transparent PNG file for the frame
+    marco.src = "MARCO.png"; 
+
+    // Coordinates of the red box in your frame image.
+    // This is the area where the user's photo will be placed.
+    const fotoDestX = 265;
+    const fotoDestY = 480;
+    const fotoDestW = 550;
+    const fotoDestH = 750;
+
+    upload.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const userImg = new Image();
+        userImg.onload = () => {
+
+          // Wait for the frame to be fully loaded before drawing
+          marco.onload = () => {
+            canvas.width = marco.width;
+            canvas.height = marco.height;
+
+            // Cropping and resizing logic to fit the user's image into the frame area
+            let sourceX = 0;
+            let sourceY = 0;
+            let sourceWidth = userImg.width;
+            let sourceHeight = userImg.height;
+            let aspect = fotoDestW / fotoDestH;
+            let imgAspect = sourceWidth / sourceHeight;
+
+            if (imgAspect > aspect) { // Image is wider than the frame area
+              sourceWidth = sourceHeight * aspect;
+              sourceX = (userImg.width - sourceWidth) / 2;
+            } else { // Image is taller than the frame area
+              sourceHeight = sourceWidth / aspect;
+              sourceY = (userImg.height - sourceHeight) / 2;
+            }
+
+            // Draw the user's photo, cropped and scaled, into the red box area
+            ctx.drawImage(userImg, sourceX, sourceY, sourceWidth, sourceHeight, fotoDestX, fotoDestY, fotoDestW, fotoDestH);
+
+            // Draw the frame on top of the photo
+            ctx.drawImage(marco, 0, 0, canvas.width, canvas.height);
+
+            downloadBtn.style.display = "inline-block";
+          };
+          
+          if (marco.complete) {
+            marco.onload(); 
+          }
+        };
+        userImg.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Download the final image
+    downloadBtn.addEventListener("click", () => {
+      const link = document.createElement("a");
+      link.download = "mi_foto_con_marco.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  </script>
+</body>
+</html>
